@@ -1,0 +1,56 @@
+version: '3'
+
+tasks:
+  build-frontend:
+    dir: frontend
+    cmds:
+    - bun i
+    - bun run build
+  build-backend:
+    dir: backend
+    cmds:
+    - go mod tidy
+    - cmd: go build -o consee .
+      platforms:
+      - linux
+      - darwin
+    - cmd: go build -o consee.exe .
+      platforms:
+      - windows
+  build-all:
+    cmds:
+    - task: build-frontend
+    - cp -r frontend/dist/* backend/public/
+    - task: build-backend
+    - cmd: cp backend/consee build/bin/consee
+      platforms:
+      - linux
+      - darwin
+    - cmd: cp backend/consee.exe build/bin/consee.exe
+      platforms:
+      - windows
+    - echo Build completed. Consee binary is in build/bin/consee.
+
+  build-installer:
+    deps:
+    - build-all
+    platforms:
+    - windows
+    dir: build
+    cmds:
+    - cp ../backend/consee.exe .
+    - makensis consee-installer.nsi
+  
+  clean:
+    ignore_error: true
+    cmds:
+    - echo "Cleaning frontend dist dir ..." && rm -rf frontend/dist/*
+    - echo "Cleaning backend public dir ..." && rm -rf backend/public/*
+    - echo "Cleaning built binaries ..." && rm -f build/bin/consee*
+    - echo "Cleaning windows installer ..." && rm -f build/consee-installer.exe
+    - echo "Done."
+
+  build-docker-image:
+    desc: "构建 Docker 镜像"
+    cmds:
+    - docker build -t consee -f build/Dockerfile .
