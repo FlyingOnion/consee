@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+
+# 文档
+README.md
+LICENSE
+*.md
+
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 构建产物
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+consee
+consee.exe
+
+# 测试输出
+*.test
+*.out
+coverage.txt
+
+# 依赖目录
+vendor/
+
+# Go 工作区文件
+go.work
+
+# 临时文件
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+logs/
+
+# 配置文件（如果包含敏感信息）
+config/config.yaml
+config/*.yaml
+!config/config.yaml.example
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 本地开发数据
+data/
+*.db
+*.sqlite
+
+# Docker 文件
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 静态文件构建产物
+public/dist/
+public/*.js
+public/*.css
+public/*.map
+!public/index.html
+
+# Task 文件
+Taskfile.yml
+Taskfile.*.yml
