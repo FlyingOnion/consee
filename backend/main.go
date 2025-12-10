@@ -98,7 +98,7 @@ func main() {
 	httpAdapter := httpadapter.NewAdapter(a2, kvService, aclService, adminService)
 	httpServer := &http.Server{
 		Addr:    ":" + strconv.Itoa(config.Port),
-		Handler: httpAdapter.HttpHandler(),
+		Handler: httpAdapter.Handler(),
 
 		ReadTimeout:       5 * time.Second,
 		ReadHeaderTimeout: 2 * time.Second,
@@ -109,12 +109,14 @@ func main() {
 	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		slog.Info("HTTP server is listening", "address", httpServer.Addr)
+		slog.Info("starting HTTP server", "address", httpServer.Addr)
 		err := httpServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			slog.Error("HTTP server terminated", "err", err)
 		}
 	}()
+
+	slog.Info("starting consee")
 	select {
 	case <-ctx.Done():
 	case sig := <-sigC:

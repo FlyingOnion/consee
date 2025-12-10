@@ -140,7 +140,7 @@ func NewAdapter(a2 service.All, kvService service.KVService, aclService service.
 // 	return r
 // }
 
-func (a *HTTPAdapter) HttpHandler() http.Handler {
+func (a *HTTPAdapter) Handler() http.Handler {
 	return a.chiHandler()
 }
 
