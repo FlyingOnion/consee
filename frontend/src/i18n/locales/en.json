@@ -1,0 +1,37 @@
+{
+  "home": {
+    "title": "Welcome to Consee",
+    "subtitle": "Configuration Management System",
+    "loggedIn": {
+      "title": "Already Logged In",
+      "description": "You are currently logged in with the following token:",
+      "switchPrompt": "Enter a new token below to switch users"
+    },
+    "accessRequired": {
+      "title": "Access Required",
+      "description": "Please enter your ACL token to continue"
+    },
+    "tokenLabel": "ACL Token",
+    "tokenPlaceholder": "Enter your ACL token",
+    "login": "Log In",
+    "switchUser": "Switch User",
+    "tokenError": "Token should be a valid UUID"
+  },
+  "header": {
+    "home": "Home",
+    "kv": "KV",
+    "tokens": "Tokens",
+    "policies": "Policies",
+    "roles": "Roles",
+    "import": "Import",
+    "export": "Export",
+    "notification": "Notification",
+    "logout": "Log out",
+    "notificationError": "Failed to get notification status, please refresh the page and try again"
+  },
+  "tokenApplication": {
+    "noTokenPrompt": "If you have no ACL token(s), click",
+    "here": "here",
+    "toApply": "to apply"
+  }
+}

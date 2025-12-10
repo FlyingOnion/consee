@@ -1,0 +1,37 @@
+{
+  "home": {
+    "title": "欢迎使用 Consee",
+    "subtitle": "配置管理系统",
+    "loggedIn": {
+      "title": "已登录",
+      "description": "您当前使用以下令牌登录：",
+      "switchPrompt": "在下方输入新令牌以切换用户"
+    },
+    "accessRequired": {
+      "title": "需要访问权限",
+      "description": "请输入您的 ACL 令牌以继续"
+    },
+    "tokenLabel": "ACL 令牌",
+    "tokenPlaceholder": "请输入您的 ACL 令牌",
+    "login": "登录",
+    "switchUser": "切换用户",
+    "tokenError": "令牌应为有效的 UUID"
+  },
+  "header": {
+    "home": "首页",
+    "kv": "键值存储",
+    "tokens": "令牌",
+    "policies": "策略",
+    "roles": "角色",
+    "import": "导入",
+    "export": "导出",
+    "notification": "通知",
+    "logout": "退出登录",
+    "notificationError": "获取通知状态失败，请刷新页面重试"
+  },
+  "tokenApplication": {
+    "noTokenPrompt": "如果您没有 ACL 令牌，请点击",
+    "here": "这里",
+    "toApply": "申请"
+  }
+}
