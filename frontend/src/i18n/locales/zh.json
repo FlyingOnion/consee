@@ -33,5 +33,48 @@
     "noTokenPrompt": "如果您没有 ACL 令牌，请点击",
     "here": "这里",
     "toApply": "申请"
+  },
+  "keyValue": {
+    "resource": "配置",
+    "title": "配置列表",
+    "selectPrompt": "从列表中选择一个配置以查看详情",
+    "refreshFailed": "刷新配置列表失败：{message}。请重新加载页面。"
+  },
+  "emptyView": {
+    "noItemSelected": "未选择{resource}"
+  },
+  "tokenPage": {
+    "resource": "令牌",
+    "title": "令牌列表",
+    "newToken": "新建令牌",
+    "createNewToken": "创建新令牌",
+    "selectPrompt": "从列表中选择一个令牌以查看详情",
+    "refreshFailed": "刷新令牌列表失败：{message}。请重新加载页面。"
+  },
+  "policyPage": {
+    "resource": "策略",
+    "title": "策略列表",
+    "newPolicy": "新建策略", 
+    "createNewPolicy": "创建新策略",
+    "selectPrompt": "从列表中选择一个策略以查看详情",
+    "refreshFailed": "刷新策略列表失败：{message}。请重新加载页面。"
+  },
+  "splitView": {
+    "hide": "隐藏",
+    "show": "显示",
+    "connecting": "正在连接 Consee 后端",
+    "showHideTitle": "显示/隐藏 {title}",
+    "chooseOne": "选择一个以查看详情。"
+  },
+  "transferBox": {
+    "available": "未选择",
+    "selected": "已选择",
+    "itemsCount": "{type}的项目 ({count})",
+    "selectAll": "全选",
+    "clearSelection": "清空选择",
+    "moveToAvailable": "移到未选择",
+    "moveToSelected": "移到已选择",
+    "goToAvailable": "查看未选择",
+    "goToSelected": "查看已选择"
   }
 }

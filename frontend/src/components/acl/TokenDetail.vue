@@ -110,7 +110,7 @@ function deleteToken() {
         <template v-if="hasExclusivePolicy">
           <div class="space-y-2">
             <RouterLink v-for="policy in data.policies" :key="policy.name"
-              :to="`/ui/acl/policy/${b64Encode(policy.name)}`"
+              :to="`/acl/policy/${b64Encode(policy.name)}`"
               class="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors duration-200">
               <div class="flex items-center">
                 <i class="w-4 h-4 i-tabler-shield-check mr-2 text-yellow-600" />

@@ -33,5 +33,48 @@
     "noTokenPrompt": "If you have no ACL token(s), click",
     "here": "here",
     "toApply": "to apply"
+  },
+  "keyValue": {
+    "title": "Key List",
+    "resource": "key",
+    "selectPrompt": "Select a key from key list to view details",
+    "refreshFailed": "Failed to refresh key list: {message}. Try reloading the page."
+  },
+  "emptyView": {
+    "noItemSelected": "No {resource} selected"
+  },
+  "tokenPage": {
+    "resource": "token",
+    "title": "Token List",
+    "newToken": "New Token",
+    "createNewToken": "Create new token",
+    "selectPrompt": "Select a token from the list to view details",
+    "refreshFailed": "Failed to refresh token list: {message}. Try reloading the page."
+  },
+  "policyPage": {
+    "resource": "policy",
+    "title": "Policy List", 
+    "newPolicy": "New Policy",
+    "createNewPolicy": "Create new policy",
+    "selectPrompt": "Select a policy from the list to view details",
+    "refreshFailed": "Failed to refresh policy list: {message}. Try reloading the page."
+  },
+  "splitView": {
+    "hide": "Hide",
+    "show": "Show",
+    "connecting": "Connecting to consee backend",
+    "showHideTitle": "Show / hide {title}",
+    "chooseOne": "Choose one to see details."
+  },
+  "transferBox": {
+    "available": "Available",
+    "selected": "Selected",
+    "itemsCount": "{type} Items ({count})",
+    "selectAll": "Select All",
+    "clearSelection": "Clear Selection",
+    "moveToAvailable": "Move to Available",
+    "moveToSelected": "Move to Selected",
+    "goToAvailable": "Go To Available",
+    "goToSelected": "Go To Selected"
   }
 }

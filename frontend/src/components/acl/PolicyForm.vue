@@ -50,7 +50,7 @@ async function createPolicy() {
     class="relative bg-white p-4 rounded-lg box-border w-150 max-[600px]:w-full flex flex-col gap-2"
   >
     <span i-tabler-x cursor-pointer absolute right-4 top-4 @click="close" />
-    <h3 m-0 text-center text-base font-semibold text-gray-900>New Token</h3>
+    <h3 m-0 text-center text-base font-semibold text-gray-900>New Policy</h3>
     <div flex flex-col gap-1>
       <label text-gray-700 text-sm font-bold for="name"> Policy Name </label>
       <input
