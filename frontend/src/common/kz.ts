@@ -253,11 +253,6 @@ export interface PolicyFormRuleListElement {
   rule: PolicyFormRule;
 }
 
-export const defaultEmptyListHints = [
-  "If list is empty, it means that there is no data yet.",
-  "Try clicking + button to add a new one.",
-];
-
 export const uuidRegexp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const exclusivePolicyRegexp =
   /^--[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;

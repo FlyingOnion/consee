@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 interface Props {
   boxType: "Available" | "Selected";
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
+
+const boxTypeText = computed(() => {
+  return props.boxType === "Available" ? t('transferBox.available') : t('transferBox.selected');
+});
 
 const elements = ref<string[]>([]);
 const selected = ref<string[]>([]);
@@ -55,22 +61,22 @@ defineExpose({
   <div class="flex-1 border border-gray-300 rounded-lg">
     <div class="bg-gray-50 px-4 py-2 border-b border-gray-300 flex justify-between items-center">
       <span class="text-sm font-medium text-gray-700">
-        {{ props.boxType }} Items ({{ elements.length }})
+        {{ t('transferBox.itemsCount', { type: boxTypeText, count: elements.length }) }}
       </span>
       <div class="flex gap-2">
         <button
           @click="selectAll"
           class="text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded"
-          title="Select All"
+          :title="t('transferBox.selectAll')"
         >
-          全选
+          {{ t('transferBox.selectAll') }}
         </button>
         <button
           @click="clearSelection"
           class="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded"
-          title="Clear Selection"
+          :title="t('transferBox.clearSelection')"
         >
-          清空
+          {{ t('transferBox.clearSelection') }}
         </button>
       </div>
     </div>

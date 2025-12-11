@@ -2,12 +2,15 @@
 import { provide, ref } from "vue";
 import KeyTree from "./kv/KeyTree.vue";
 import { useRoute, useRouter } from "vue-router";
-import { b64Decode, b64Encode, debounce, defaultEmptyListHints } from "../common/kz";
+import { b64Decode, b64Encode, debounce } from "../common/kz";
 import SplitView from "./common/SplitView.vue";
 import emitter from "../common/mitt";
 import { toast } from "vue3-toastify";
 import { kvList } from "../common/alova";
 import EmptyView from "./common/EmptyView.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 function loadOpenKeys(): Set<string> {
   const openKeys = localStorage.getItem("kv-open-keys");
@@ -91,7 +94,7 @@ function refresh() {
         }
       })
       .catch((e: Error) => {
-        toast.warn(`Failed to refresh key list: ${e.message}. Try reloading the page.`);
+        toast.warn(t("keyValue.refreshFailed", { message: e.message }));
       });
   }, 300);
 }
@@ -100,14 +103,14 @@ const valuearea2 = ref<{ resetVersion: () => void } | null>(null);
 </script>
 
 <template>
-  <SplitView :loading :error title="Key List" :current="currentKey" :hints="defaultEmptyListHints">
+  <SplitView :loading :error :title="t('keyValue.title')" :current="currentKey">
     <template #list>
       <KeyTree :data="keys" />
     </template>
     <ValueArea2 ref="valuearea2" :k="currentKey"></ValueArea2>
     <template #empty>
-      <EmptyView resource="key">
-        <p class="text-sm">Select a key from the tree to view details</p>
+      <EmptyView :resource="t('keyValue.resource')">
+        <p class="text-sm">{{ t('keyValue.selectPrompt') }}</p>
       </EmptyView>
     </template>
   </SplitView>

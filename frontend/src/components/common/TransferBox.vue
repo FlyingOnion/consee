@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import TransferBoxContainer from "./TransferBoxContainer.vue";
+import { useI18n } from "vue-i18n";
 
 type Container = InstanceType<typeof TransferBoxContainer>;
+
+const { t } = useI18n();
 
 const leftContainer = ref<Container | null>(null);
 const rightContainer = ref<Container | null>(null);
@@ -52,7 +55,7 @@ function setRightPanelVisible(visible: boolean) {
         @click="moveSelected(leftContainer!, rightContainer!)"
         :disabled="!leftContainer?.selected.length"
         class="flex p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        title="Move to Right"
+        :title="t('transferBox.moveToSelected')"
       >
         <i class="w-4 h-4 i-tabler-chevron-right" />
       </button>
@@ -60,7 +63,7 @@ function setRightPanelVisible(visible: boolean) {
         @click="moveSelected(rightContainer!, leftContainer!)"
         :disabled="!rightContainer?.selected.length"
         class="flex p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        title="Move to Left"
+        :title="t('transferBox.moveToAvailable')"
       >
         <i class="w-4 h-4 i-tabler-chevron-left" />
       </button>
@@ -80,14 +83,14 @@ function setRightPanelVisible(visible: boolean) {
       class="flex p-2 justify-center items-center h-40px hover:bg-gray-50 hover:border-gray-300 rounded cursor-pointer text-bluegray-5"
       @click="setRightPanelVisible(false)"
     >
-      Go To Available
+      {{ t('transferBox.goToAvailable') }}
     </button>
     <button
       @click="moveSelected(rightContainer!, leftContainer!)"
       :disabled="!rightContainer?.selected.length"
       class="flex p-2 justify-center items-center h-40px bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
     >
-      <span>Move to Available</span>
+      <span>{{ t('transferBox.moveToAvailable') }}</span>
     </button>
   </div>
   <div v-if="isMobile && !isRightPanelVisible" flex flex-col gap-2>
@@ -95,14 +98,14 @@ function setRightPanelVisible(visible: boolean) {
       class="flex p-2 justify-center items-center h-40px hover:bg-gray-50 hover:border-gray-300 rounded cursor-pointer text-bluegray-5"
       @click="setRightPanelVisible(true)"
     >
-      Go To Selected
+      {{ t('transferBox.goToSelected') }}
     </button>
     <button
       @click="moveSelected(leftContainer!, rightContainer!)"
       :disabled="!leftContainer?.selected.length"
       class="flex p-2 justify-center items-center h-40px bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
     >
-      <span>Move to Selected</span>
+      <span>{{ t('transferBox.moveToSelected') }}</span>
     </button>
   </div>
 </template>

@@ -7,8 +7,7 @@ import {
   alova,
   debounce,
   type ACLLink,
-  type TokenDetailInfo,
-  defaultEmptyListHints,
+  type TokenDetailInfo
 } from "../common/kz";
 import FullScreenModal from "./common/FullScreenModal.vue";
 import ACLList from "./acl/TokenList.vue";
@@ -18,6 +17,9 @@ import { toast } from "vue3-toastify";
 import { invalidateCache } from "alova";
 import TokenDetail from "./acl/TokenDetail.vue";
 import emitter from "../common/mitt";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -63,7 +65,7 @@ function refresh() {
         }
       })
       .catch((e: Error) => {
-        toast.warn(`Failed to refresh token list: ${e.message}. Try reloading the page.`);
+        toast.warn(t("tokenPage.refreshFailed", { message: e.message }));
       });
   }, 300);
 }
@@ -98,15 +100,15 @@ watch(currentToken, debouncedSetDetail);
 </script>
 
 <template>
-  <SplitView :loading :error title="Token List" :current="currentTokenName" :hints="defaultEmptyListHints">
+  <SplitView :loading :error :title="t('tokenPage.title')" :current="currentTokenName">
     <template #controls>
       <FullScreenModal>
         <template #trigger="{ open }">
           <button @click="open"
             class="flex items-center justify-center p-2 gap-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 shadow-sm"
-            title="Create new token">
+            :title="t('tokenPage.createNewToken')">
             <i class="w-4 h-4 i-tabler-plus" />
-            <span class="text-sm font-medium hidden sm:inline">New Token</span>
+            <span class="text-sm font-medium hidden sm:inline">{{ t('tokenPage.newToken') }}</span>
           </button>
         </template>
         <template #default="{ close }">
@@ -126,8 +128,8 @@ watch(currentToken, debouncedSetDetail);
     </div>
 
     <template #empty>
-      <EmptyView resource="token">
-        <p class="text-sm">Select a token from the list to view details</p>
+      <EmptyView :resource="t('tokenPage.resource')">
+        <p class="text-sm">{{ t('tokenPage.selectPrompt') }}</p>
       </EmptyView>
     </template>
   </SplitView>

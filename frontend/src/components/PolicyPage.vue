@@ -6,7 +6,6 @@ import { aclPolicyGetDetail, aclPolicyList } from "../common/alova";
 import {
   alova,
   type ACLLink,
-  defaultEmptyListHints,
   type PolicyDetailInfo,
   debounce,
   b64Encode,
@@ -21,6 +20,9 @@ import FullScreenModal from "./common/FullScreenModal.vue";
 import { toast } from "vue3-toastify";
 import { invalidateCache } from "alova";
 import emitter from "../common/mitt";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -66,7 +68,7 @@ function refresh() {
         }
       })
       .catch((e: Error) => {
-        toast.warn(`Failed to refresh token list: ${e.message}. Try reloading the page.`);
+        toast.warn(t("policyPage.refreshFailed", { message: e.message }));
       });
   }, 300);
 }
@@ -101,15 +103,15 @@ watch(currentPolicyName, debouncedSetDetail);
 </script>
 
 <template>
-  <SplitView :loading :error title="Policy List" :current="currentPolicyName" :hints="defaultEmptyListHints">
+  <SplitView :loading :error :title="t('policyPage.title')" :current="currentPolicyName">
     <template #controls>
       <FullScreenModal>
         <template #trigger="{ open }">
           <button @click="open"
             class="flex items-center justify-center p-2 gap-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 shadow-sm"
-            title="Create new token">
+            :title="t('policyPage.createNewPolicy')">
             <i class="w-4 h-4 i-tabler-plus" />
-            <span class="text-sm font-medium hidden sm:inline">New Policy</span>
+            <span class="text-sm font-medium hidden sm:inline">{{ t('policyPage.newPolicy') }}</span>
           </button>
         </template>
         <template #default="{ close }">
@@ -129,8 +131,8 @@ watch(currentPolicyName, debouncedSetDetail);
     </div>
 
     <template #empty>
-      <EmptyView resource="policy">
-        <p class="text-sm">Select a policy from the list to view details</p>
+      <EmptyView :resource="t('policyPage.newPolicy')">
+        <p class="text-sm">{{ t('policyPage.selectPrompt') }}</p>
       </EmptyView>
     </template>
   </SplitView>

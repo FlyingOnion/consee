@@ -1,7 +1,7 @@
 <template>
   <div class="overflow-y-auto flex-grow relative p-2 flex transition-all duration-300 ease-in-out">
     <slot v-if="loading" name="loading">
-      <p text-bluegray-5>Connecting to consee backend</p>
+      <p text-bluegray-5>{{ t('splitView.connecting') }}</p>
     </slot>
     <slot v-else-if="error" name="error">
       <p text-bluegray-5>{{ error }}</p>
@@ -41,7 +41,7 @@
               w-4
               h-4
               :class="isListVisible ? 'i-tabler-chevron-left' : 'i-tabler-chevron-right'"
-              :title="`show / hide ${title.toLocaleLowerCase()}`"
+              :title="t('splitView.showHideTitle', { title: title.toLocaleLowerCase() })"
             />
           </button>
           <template v-if="current">
@@ -53,7 +53,7 @@
         <div class="flex-grow flex flex-col overflow-y-auto">
           <slot v-if="current"></slot>
           <slot v-else name="empty">
-            <p pl-3 text-gray-500>Choose one to see details.</p>
+            <p pl-3 text-gray-500>{{ t('splitView.chooseOne') }}</p>
             <p v-for="h in hints" :key="h" pl-3 text-gray-500>{{ h }}</p>
           </slot>
         </div>
@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 interface Props {
   loading: boolean;
@@ -73,6 +74,7 @@ interface Props {
   hints?: string[];
 }
 const props = defineProps<Props>();
+const { t } = useI18n();
 
 const screenWidth = ref(window.innerWidth);
 const isMobile = computed(() => screenWidth.value <= 960);
@@ -80,7 +82,7 @@ const isListVisibleStorageKey = "G-Consee-SplitView:Is-List-Visible";
 const isListVisible = ref(!isMobile.value && localStorage.getItem(isListVisibleStorageKey) === "1");
 
 const defaultHint = computed(
-  () => `${isListVisible.value ? "Hide" : "Show"} ${props.title.toLocaleLowerCase()}`
+  () => `${isListVisible.value ? t("splitView.hide") : t("splitView.show")} ${props.title.toLocaleLowerCase()}`
 );
 
 function setListVisible(visible: boolean) {
