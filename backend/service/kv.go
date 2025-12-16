@@ -11,7 +11,6 @@ import (
 
 	"github.com/FlyingOnion/consee/backend/buffer"
 	. "github.com/FlyingOnion/consee/backend/common"
-	"github.com/FlyingOnion/consee/backend/consul"
 	"github.com/FlyingOnion/consee/backend/repo"
 )
 
@@ -203,12 +202,4 @@ func (s *kvService) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (s *kvService) WatchOpenNotificationsCount(ctx context.Context, cb func(n int)) {
-	s.kv.WatchKeys(ctx, ConseeInternalKeyPrefix+"notifications/open/", func(r *consul.Response[[]string], err error) (stop bool) {
-		if cb != nil && r != nil {
-			slog.Info("open notifications count changed", "n", len(r.Body))
-			cb(len(r.Body))
-		}
-		return false
-	})
-}
+func (s *kvService) WatchOpenNotificationsCount(ctx context.Context, cb func(n int)) {}

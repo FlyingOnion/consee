@@ -11,79 +11,6 @@ import {
 } from "./kz";
 import { conseeErrorKey, conseeTokenKey } from "./const";
 
-// export function consulGetTokens(): Method {
-//   return alovaGet<ACLLink[]>("/acl/tokens", "Failed to fetch tokens");
-// }
-
-// export function consulGetTokenDetail(tokenId: string): Method {
-//   return alovaGet<TokenDetailInfo>(`/acl/token/${tokenId}`, "Failed to fetch token detail");
-// }
-
-// export function consulGetPolicies(): Method {
-//   return alovaGet<ACLLink[]>("/acl/policies", "Failed to fetch policies");
-// }
-
-// export function consulGetPolicyDetail(policyId: string): Method {
-//   return alovaGet<PolicyDetailInfo>(`/acl/policy/${policyId}`, "Failed to fetch policy detail");
-// }
-
-// export function consulGetKeys(): Method {
-//   return alovaGet<string[]>("/kv/keys", "Failed to fetch keys");
-// }
-
-// export function consulGetValue(b64key: string): Method {
-//   return alovaGet(`/kv/value/${b64key}`, "Failed to fetch value");
-// }
-
-// export function consulGetValueType(b64key: string): Method {
-//   return alova.Get(`/kv/valuetype/${b64key}`, {
-//     headers: {
-//       [conseeTokenKey]: localStorage.getItem(conseeTokenKey) || "",
-//     },
-//     cacheFor: null,
-//   });
-// }
-
-// export function consulGetValueHistory(b64key: string): Method {
-//   return alovaGet(`/kv/history/${b64key}`, "Failed to get history versions");
-// }
-
-export function parseHCL(hcl: string): Method {
-  return alova.Post("/acl/hcl-rule", hcl, {
-    transform: (resp: Response) => {
-      return resp.status === 200
-        ? (resp.json() as Promise<PolicyFormRule[]>)
-        : Promise.reject(new Error(resp.headers.get(conseeErrorKey) || "Failed to parse HCL"));
-    },
-  });
-}
-
-export function notificationStatus(): Method {
-  return alovaGet("/notifications/status", "Failed to fetch notification status");
-}
-
-export function notificationList(): Method {
-  return alovaGet("/notifications", "Failed to fetch notification list");
-}
-
-export function alovaGet<T>(
-  url: string,
-  defaultErrorMsg: string,
-  params?: { [x: string]: any },
-): Method {
-  return alova.Get(url, {
-    headers: {
-      [conseeTokenKey]: localStorage.getItem(conseeTokenKey) || "",
-    },
-    params,
-    transform: (resp: Response) => {
-      return resp.status === 200
-        ? (resp.json() as Promise<T>)
-        : Promise.reject(new Error(resp.headers.get(conseeErrorKey) || defaultErrorMsg));
-    },
-  });
-}
-
 export async function respToJson<T>(resp: Response): Promise<T> {
   return resp.clone().json() as Promise<T>;
 }
@@ -387,6 +314,14 @@ export function aclPolicyDelete(b64policyName: string): Promise<void> {
     expectedStatus: 204,
     defaultErrorMsg: "Failed to delete policy",
   });
+}
+
+export function aclPolicyRuleValidate(rule: string): Promise<PolicyFormRule[]> {
+  return alovaCall(`/acl/hcl-rule`, {
+    method: "POST",
+    body: rule,
+    transform: respToJson<PolicyFormRule[]>,
+  })
 }
 
 /* 一堆封装的方法：导入导出 */
