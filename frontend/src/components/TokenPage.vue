@@ -10,7 +10,7 @@ import {
   type TokenDetailInfo
 } from "../common/kz";
 import FullScreenModal from "./common/FullScreenModal.vue";
-import ACLList from "./acl/TokenList.vue";
+import TokenList from "./acl/TokenList.vue";
 import SplitView from "./common/SplitView.vue";
 import EmptyView from "./common/EmptyView.vue";
 import { toast } from "vue3-toastify";
@@ -117,7 +117,7 @@ watch(currentToken, debouncedSetDetail);
       </FullScreenModal>
     </template>
     <template #list>
-      <ACLList et="token" :t="currentToken" :data="tokenList" @item-click="onItemClick" />
+      <TokenList et="token" :t="currentToken" :data="tokenList" @item-click="onItemClick" />
     </template>
 
     <!-- Token Detail Section -->

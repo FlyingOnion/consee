@@ -75,10 +75,10 @@ function toggleLanguage() {
 </script>
 
 <template>
-  <div class="hidden sm:flex items-center p-2 gap-2">
+  <div class="hidden md:flex items-center p-2 gap-2">
     <img src="/consee.svg" w-20 alt="Consee" />
     <div v-for="l in links" :key="l.path" flex>
-      <RouterLink v-if="l.show?.()" :to="l.path" px-4 py-2 hover:bg-gray-2 active:bg-gray-3 rounded text-blue-4>
+      <RouterLink v-if="l.show?.()" :to="l.path" px-3 py-2 hover:bg-gray-2 active:bg-gray-3 rounded text-blue-4>
         <p flex items-center h-4>{{ t(l.name) }}</p>
       </RouterLink>
     </div>
@@ -97,7 +97,7 @@ function toggleLanguage() {
     </div>
   </div>
 
-  <div class="sm:hidden flex flex-col p-2">
+  <div class="md:hidden flex flex-col p-2">
     <div class="relative w-full flex justify-between items-center">
       <button v-if="authenticated" @click="mobileMenuOpen = !mobileMenuOpen"
         class="flex p-2 rounded-md text-gray-700 hover:bg-gray-100 z-10">
