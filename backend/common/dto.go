@@ -308,10 +308,10 @@ type CreateRoleRequest struct {
 }
 
 type ReadRoleResponse struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Policies    []string `json:"policies"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Policies    []ACLLink `json:"policies"`
 }
 
 type UpdateRoleRequest struct {

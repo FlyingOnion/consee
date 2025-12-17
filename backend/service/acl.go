@@ -792,9 +792,9 @@ func (s *aclService) ReadRole(ctx context.Context, name string) (*ReadRoleRespon
 		return nil, errFailedToParse
 	}
 
-	policies := make([]string, 0, len(resp.Body.Policies))
+	policies := make([]ACLLink, 0, len(resp.Body.Policies))
 	for _, p := range resp.Body.Policies {
-		policies = append(policies, p.Name)
+		policies = append(policies, ACLLink{ID: p.ID, Name: p.Name})
 	}
 
 	return &ReadRoleResponse{
