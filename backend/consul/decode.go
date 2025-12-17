@@ -57,3 +57,18 @@ func decodeACLPolicyList(b []byte) ([]*ACLPolicy, error) {
 	e := json.Unmarshal(b, &policies)
 	return policies, e
 }
+
+func decodeACLRole(b []byte) (*ACLRole, error) {
+	role := &ACLRole{}
+	e := json.Unmarshal(b, role)
+	if e != nil {
+		return nil, e
+	}
+	return role, nil
+}
+
+func decodeACLRoleList(b []byte) ([]*ACLRole, error) {
+	roles := []*ACLRole{}
+	e := json.Unmarshal(b, &roles)
+	return roles, e
+}

@@ -71,6 +71,28 @@ type ACLPolicy struct {
 	Partition string `json:",omitempty"`
 }
 
+// ACLRole represents an ACL Role.
+type ACLRole struct {
+	ID          string
+	Name        string
+	Description string
+	Policies    []*ACLLink `json:",omitempty"`
+	// ServiceIdentities []*ACLServiceIdentity `json:",omitempty"`
+	// NodeIdentities    []*ACLNodeIdentity    `json:",omitempty"`
+	// TemplatedPolicies []*ACLTemplatedPolicy `json:",omitempty"`
+	Hash        []byte
+	CreateIndex uint64
+	ModifyIndex uint64
+
+	// Namespace is the namespace the ACLRole is associated with.
+	// Namespacing is a Consul Enterprise feature.
+	Namespace string `json:",omitempty"`
+
+	// Partition is the partition the ACLRole is associated with.
+	// Partitions are a Consul Enterprise feature.
+	Partition string `json:",omitempty"`
+}
+
 type ACL struct {
 	c *Client
 }
@@ -165,5 +187,43 @@ func (a *ACL) PolicyUpdate(ctx context.Context, req *ACLPolicy, w *WriteOptions)
 
 func (a *ACL) PolicyDelete(ctx context.Context, id string, w *WriteOptions) (*Response[bool], error) {
 	httpReq := a.c.newRequest(ctx, http.MethodDelete, "/v1/acl/policy/"+id, w.toRequestOptions()...)
+	return responseDirectly(a.c.httpClient, httpReq, decodeTrue)
+}
+
+func (a *ACL) RoleList(ctx context.Context, q *QueryOptions) (*Response[[]*ACLRole], error) {
+	httpReq := a.c.newRequest(ctx, http.MethodGet, "/v1/acl/roles", q.toRequestOptions()...)
+	return responseDirectly(a.c.httpClient, httpReq, decodeACLRoleList)
+}
+
+func (a *ACL) RoleRead(ctx context.Context, id string, q *QueryOptions) (*Response[*ACLRole], error) {
+	httpReq := a.c.newRequest(ctx, http.MethodGet, "/v1/acl/role/"+id, q.toRequestOptions()...)
+	return responseDirectly(a.c.httpClient, httpReq, decodeACLRole)
+}
+
+func (a *ACL) RoleReadByName(ctx context.Context, name string, q *QueryOptions) (*Response[*ACLRole], error) {
+	httpReq := a.c.newRequest(ctx, http.MethodGet, "/v1/acl/role/name/"+url.QueryEscape(name), q.toRequestOptions()...)
+	return responseDirectly(a.c.httpClient, httpReq, decodeACLRole)
+}
+
+func (a *ACL) RoleCreate(ctx context.Context, req *ACLRole, w *WriteOptions) (*Response[*ACLRole], error) {
+	b, _ := json.Marshal(req)
+	options := append(w.toRequestOptions(),
+		reqWithBody(b),
+	)
+	httpReq := a.c.newRequest(ctx, http.MethodPut, "/v1/acl/role", options...)
+	return responseDirectly(a.c.httpClient, httpReq, decodeACLRole)
+}
+
+func (a *ACL) RoleUpdate(ctx context.Context, req *ACLRole, w *WriteOptions) (*Response[*ACLRole], error) {
+	b, _ := json.Marshal(req)
+	options := append(w.toRequestOptions(),
+		reqWithBody(b),
+	)
+	httpReq := a.c.newRequest(ctx, http.MethodPut, "/v1/acl/role/"+req.ID, options...)
+	return responseDirectly(a.c.httpClient, httpReq, decodeACLRole)
+}
+
+func (a *ACL) RoleDelete(ctx context.Context, id string, w *WriteOptions) (*Response[bool], error) {
+	httpReq := a.c.newRequest(ctx, http.MethodDelete, "/v1/acl/role/"+id, w.toRequestOptions()...)
 	return responseDirectly(a.c.httpClient, httpReq, decodeTrue)
 }

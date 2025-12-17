@@ -93,3 +93,27 @@ func (a *admin) UpdatePolicy(ctx context.Context, req *consul.ACLPolicy) (*consu
 func (a *admin) DeletePolicy(ctx context.Context, id string) (*consul.Response[bool], error) {
 	return a.client.ACL().PolicyDelete(ctx, id, a.w)
 }
+
+func (a *admin) ListRoles(ctx context.Context) (*consul.Response[[]*consul.ACLRole], error) {
+	return a.client.ACL().RoleList(ctx, a.q)
+}
+
+func (a *admin) ReadRole(ctx context.Context, id string) (*consul.Response[*consul.ACLRole], error) {
+	return a.client.ACL().RoleRead(ctx, id, a.q)
+}
+
+func (a *admin) ReadRoleByName(ctx context.Context, name string) (*consul.Response[*consul.ACLRole], error) {
+	return a.client.ACL().RoleReadByName(ctx, name, a.q)
+}
+
+func (a *admin) CreateRole(ctx context.Context, req *consul.ACLRole) (*consul.Response[*consul.ACLRole], error) {
+	return a.client.ACL().RoleCreate(ctx, req, a.w)
+}
+
+func (a *admin) UpdateRole(ctx context.Context, req *consul.ACLRole) (*consul.Response[*consul.ACLRole], error) {
+	return a.client.ACL().RoleUpdate(ctx, req, a.w)
+}
+
+func (a *admin) DeleteRole(ctx context.Context, id string) (*consul.Response[bool], error) {
+	return a.client.ACL().RoleDelete(ctx, id, a.w)
+}

@@ -270,3 +270,109 @@ func (a *HTTPAdapter) DeleteACLPolicy(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (a *HTTPAdapter) ListACLRoles(w http.ResponseWriter, r *http.Request) {
+	utoken := r.Header.Get(ConseeTokenHeaderKey)
+	ctx := consul.ContextWithQueryOptions(r.Context(), &consul.QueryOptions{Token: utoken})
+	
+	roles, err := a.aclService.ListRoles(ctx)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+	response(w, roles)
+}
+
+func (a *HTTPAdapter) CreateACLRole(w http.ResponseWriter, r *http.Request) {
+	var req CreateRoleRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		errorResponse(w, &StatusError{Err: err, Process: "decoding body", Status: http.StatusBadRequest})
+		return
+	}
+
+	utoken := r.Header.Get(ConseeTokenHeaderKey)
+	ctx := consul.ContextWithQueryOptions(r.Context(), &consul.QueryOptions{Token: utoken})
+	ctx = consul.ContextWithWriteOptions(ctx, &consul.WriteOptions{Token: utoken})
+	err = a.aclService.CreateRole(ctx, &req)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (a *HTTPAdapter) ReadACLRole(w http.ResponseWriter, r *http.Request) {
+	b64name := chi.URLParam(r, "b64name")
+	name, err := base64.StdEncoding.DecodeString(b64name)
+	if err != nil {
+		errorResponse(w, &StatusError{
+			Process: "decoding role name",
+			Status:  http.StatusBadRequest,
+			Err:     err,
+		})
+		return
+	}
+	
+	utoken := r.Header.Get(ConseeTokenHeaderKey)
+	ctx := consul.ContextWithQueryOptions(r.Context(), &consul.QueryOptions{Token: utoken})
+	role, err := a.aclService.ReadRole(ctx, string(name))
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+	response(w, role)
+}
+
+func (a *HTTPAdapter) UpdateACLRole(w http.ResponseWriter, r *http.Request) {
+	b64name := chi.URLParam(r, "b64name")
+	name, err := base64.StdEncoding.DecodeString(b64name)
+	if err != nil {
+		errorResponse(w, &StatusError{
+			Process: "decoding role name",
+			Status:  http.StatusBadRequest,
+			Err:     err,
+		})
+		return
+	}
+	
+	var req UpdateRoleRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		errorResponse(w, &StatusError{Err: err, Process: "decoding body", Status: http.StatusBadRequest})
+		return
+	}
+	
+	utoken := r.Header.Get(ConseeTokenHeaderKey)
+	ctx := consul.ContextWithQueryOptions(r.Context(), &consul.QueryOptions{Token: utoken})
+	ctx = consul.ContextWithWriteOptions(ctx, &consul.WriteOptions{Token: utoken})
+	err = a.aclService.UpdateRole(ctx, string(name), &req)
+	if err != nil {
+		errorResponse(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *HTTPAdapter) DeleteACLRole(w http.ResponseWriter, r *http.Request) {
+	b64name := chi.URLParam(r, "b64name")
+	name, err := base64.StdEncoding.DecodeString(b64name)
+	if err != nil {
+		errorResponse(w, &StatusError{
+			Process: "decoding role name",
+			Status:  http.StatusBadRequest,
+			Err:     err,
+		})
+		return
+	}
+	
+	utoken := r.Header.Get(ConseeTokenHeaderKey)
+	ctx := consul.ContextWithQueryOptions(r.Context(), &consul.QueryOptions{Token: utoken})
+	ctx = consul.ContextWithWriteOptions(ctx, &consul.WriteOptions{Token: utoken})
+	err = a.aclService.DeleteRole(ctx, string(name))
+	if err != nil {
+		errorResponse(w, NewStatusError(err))
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

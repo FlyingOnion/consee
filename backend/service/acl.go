@@ -41,6 +41,12 @@ type ACLService interface {
 	ReadPolicy(ctx context.Context, name string) (*ReadPolicyResponse, error)
 	UpdatePolicyRule(ctx context.Context, name, rules string) error
 	DeletePolicy(ctx context.Context, name string) error
+
+	ListRoles(ctx context.Context) ([]ACLLink, error)
+	CreateRole(ctx context.Context, req *CreateRoleRequest) error
+	ReadRole(ctx context.Context, name string) (*ReadRoleResponse, error)
+	UpdateRole(ctx context.Context, name string, req *UpdateRoleRequest) error
+	DeleteRole(ctx context.Context, name string) error
 }
 
 type aclService struct {
@@ -698,5 +704,183 @@ func (s *aclService) UpdatePolicyRule(ctx context.Context, name, rules string) e
 		return errFailedToParse
 	}
 
+	return nil
+}
+
+func (s *aclService) ListRoles(ctx context.Context) ([]ACLLink, error) {
+	resp, err := s.acl.ListRoles(ctx)
+	if err != nil {
+		slog.Error("failed to list roles", "error", err)
+		return nil, errFailedToConnectConsul
+	}
+	if resp.Status == http.StatusForbidden {
+		return nil, errPermissionDenied
+	}
+	if resp.Err != nil {
+		slog.Error("failed to parse role list response", "error", resp.Err)
+		return nil, errFailedToParse
+	}
+	roleList := make([]ACLLink, 0, len(resp.Body))
+	for _, r := range resp.Body {
+		roleList = append(roleList, ACLLink{
+			ID:   r.ID,
+			Name: r.Name,
+		})
+	}
+	slices.SortStableFunc(roleList, aclLinkCompare)
+	return roleList, nil
+}
+
+func (s *aclService) CreateRole(ctx context.Context, req *CreateRoleRequest) error {
+	if req.Name == "" {
+		return &DomainError{Code: DomainErrorCodeInvalidInput, Message: "role name is required"}
+	}
+	resp1, err := s.acl.ReadRoleByName(ctx, req.Name)
+	if err != nil {
+		return errFailedToConnectConsul
+	}
+	if resp1.Status == http.StatusForbidden {
+		return errPermissionDenied
+	}
+	if resp1.Body != nil {
+		return &DomainError{Code: DomainErrorCodeAlreadyExists, Message: "role name already exists"}
+	}
+
+	// Validate that all policies exist
+	for _, policyName := range req.Policies {
+		_, err := s.ReadPolicy(ctx, policyName)
+		if err != nil {
+			return err
+		}
+	}
+
+	policies := make([]*consul.ACLLink, 0, len(req.Policies))
+	for _, policy := range req.Policies {
+		policies = append(policies, &consul.ACLLink{Name: policy})
+	}
+
+	resp, err := s.acl.CreateRole(ctx, &consul.ACLRole{
+		Name:        req.Name,
+		Description: req.Description,
+		Policies:    policies,
+	})
+	if err != nil {
+		return errFailedToConnectConsul
+	}
+	if resp.Status == http.StatusForbidden {
+		return errPermissionDenied
+	}
+	if resp.Status != http.StatusOK || resp.Body == nil {
+		return errUnknown
+	}
+	return nil
+}
+
+func (s *aclService) ReadRole(ctx context.Context, name string) (*ReadRoleResponse, error) {
+	resp, err := s.acl.ReadRoleByName(ctx, name)
+	if err != nil {
+		slog.Error("failed to read role", "roleName", name, "error", err)
+		return nil, errFailedToConnectConsul
+	}
+	if resp.Status == http.StatusForbidden {
+		return nil, errPermissionDenied
+	}
+	if resp.Status == http.StatusNotFound {
+		return nil, &DomainError{Code: DomainErrorCodeNotFound, Message: "role not found"}
+	}
+	if resp.Err != nil || resp.Body == nil {
+		return nil, errFailedToParse
+	}
+
+	policies := make([]string, 0, len(resp.Body.Policies))
+	for _, p := range resp.Body.Policies {
+		policies = append(policies, p.Name)
+	}
+
+	return &ReadRoleResponse{
+		ID:          resp.Body.ID,
+		Name:        resp.Body.Name,
+		Description: resp.Body.Description,
+		Policies:    policies,
+	}, nil
+}
+
+func (s *aclService) UpdateRole(ctx context.Context, name string, req *UpdateRoleRequest) error {
+	resp, err := s.acl.ReadRoleByName(ctx, name)
+	if err != nil {
+		return errFailedToConnectConsul
+	}
+	if resp.Status == http.StatusForbidden {
+		return errPermissionDenied
+	}
+	if resp.Status == http.StatusNotFound || resp.Body == nil {
+		return &DomainError{Code: DomainErrorCodeNotFound, Message: "role not found"}
+	}
+	if resp.Err != nil {
+		return errFailedToParse
+	}
+
+	// Validate that all policies exist
+	for _, policyName := range req.Policies {
+		_, err := s.ReadPolicy(ctx, policyName)
+		if err != nil {
+			return err
+		}
+	}
+
+	policies := make([]*consul.ACLLink, 0, len(req.Policies))
+	for _, policy := range req.Policies {
+		policies = append(policies, &consul.ACLLink{Name: policy})
+	}
+
+	role := resp.Body
+	role.Policies = policies
+
+	updateResp, err := s.acl.UpdateRole(ctx, role)
+	if err != nil {
+		return errFailedToConnectConsul
+	}
+	if updateResp.Status == http.StatusForbidden {
+		return errPermissionDenied
+	}
+	if updateResp.Status == http.StatusNotFound {
+		return &DomainError{Code: DomainErrorCodeNotFound, Message: "role not found during update"}
+	}
+	if updateResp.Err != nil {
+		return errFailedToParse
+	}
+
+	return nil
+}
+
+func (s *aclService) DeleteRole(ctx context.Context, name string) error {
+	resp, err := s.acl.ReadRoleByName(ctx, name)
+	if err != nil {
+		return errFailedToConnectConsul
+	}
+	if resp.Status == http.StatusForbidden {
+		return errPermissionDenied
+	}
+	if resp.Status == http.StatusNotFound {
+		return &DomainError{Code: DomainErrorCodeNotFound, Message: "role not found"}
+	}
+	if resp.Err != nil || resp.Body == nil {
+		return errFailedToParse
+	}
+
+	return s.deleteRole(ctx, resp.Body.ID)
+}
+
+func (s *aclService) deleteRole(ctx context.Context, id string) error {
+	resp, err := s.acl.DeleteRole(ctx, id)
+	if err != nil {
+		return errFailedToConnectConsul
+	}
+	if resp.Status == http.StatusForbidden {
+		return errPermissionDenied
+	}
+	if resp.Status == http.StatusNotFound {
+		return &DomainError{Code: DomainErrorCodeInternalError, Message: "role not found"}
+	}
 	return nil
 }

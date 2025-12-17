@@ -182,6 +182,12 @@ func (a *HTTPAdapter) chiHandler() *chi.Mux {
 					sub.Post("/policy", a.CreateACLPolicy)
 					sub.Get("/policy/{b64name}", a.ReadACLPolicy)
 					sub.Delete("/policy/{b64name}", a.DeleteACLPolicy)
+
+					sub.Get("/roles", a.ListACLRoles)
+					sub.Post("/role", a.CreateACLRole)
+					sub.Get("/role/{b64name}", a.ReadACLRole)
+					sub.Put("/role/{b64name}", a.UpdateACLRole)
+					sub.Delete("/role/{b64name}", a.DeleteACLRole)
 				})
 			})
 		})

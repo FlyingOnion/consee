@@ -298,6 +298,26 @@ type ReadPolicyResponse struct {
 	Tokens      []ACLLink    `json:"tokens"`
 }
 
+type ListRolesOptions struct {
+}
+
+type CreateRoleRequest struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Policies    []string `json:"policies"`
+}
+
+type ReadRoleResponse struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Policies    []string `json:"policies"`
+}
+
+type UpdateRoleRequest struct {
+	Policies []string `json:"policies"`
+}
+
 type TokenApplicationRequest struct {
 	AccessorID string `json:"accessor_id"`
 	SecretID   string `json:"secret_id"`

@@ -24,4 +24,11 @@ type ACLRepo interface {
 	CreatePolicy(ctx context.Context, req *consul.ACLPolicy) (*consul.Response[*consul.ACLPolicy], error)
 	UpdatePolicy(ctx context.Context, req *consul.ACLPolicy) (*consul.Response[*consul.ACLPolicy], error)
 	DeletePolicy(ctx context.Context, id string) (*consul.Response[bool], error)
+
+	ListRoles(ctx context.Context) (*consul.Response[[]*consul.ACLRole], error)
+	ReadRole(ctx context.Context, id string) (*consul.Response[*consul.ACLRole], error)
+	ReadRoleByName(ctx context.Context, name string) (*consul.Response[*consul.ACLRole], error)
+	CreateRole(ctx context.Context, req *consul.ACLRole) (*consul.Response[*consul.ACLRole], error)
+	UpdateRole(ctx context.Context, req *consul.ACLRole) (*consul.Response[*consul.ACLRole], error)
+	DeleteRole(ctx context.Context, id string) (*consul.Response[bool], error)
 }
