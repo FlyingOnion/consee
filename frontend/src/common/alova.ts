@@ -7,6 +7,7 @@ import {
   type KeyValue,
   type PolicyDetailInfo,
   type PolicyFormRule,
+  type RoleDetailInfo,
   type TokenDetailInfo,
 } from "./kz";
 import { conseeErrorKey, conseeTokenKey } from "./const";
@@ -322,6 +323,57 @@ export function aclPolicyRuleValidate(rule: string): Promise<PolicyFormRule[]> {
     body: rule,
     transform: respToJson<PolicyFormRule[]>,
   })
+}
+
+/* Role API */
+export function aclRoleList(): Promise<ACLLink[]> {
+  return alovaCall("/acl/roles", {
+    name: "aclRoleList",
+    withToken: true,
+    transform: respToJson<ACLLink[]>,
+    defaultErrorMsg: "Failed to get role list",
+  });
+}
+
+export function aclRoleGetDetail(b64roleName: string): Promise<RoleDetailInfo> {
+  return alovaCall(`/acl/role/${b64roleName}`, {
+    name: "aclRoleGetDetail",
+    withToken: true,
+    transform: respToJson<RoleDetailInfo>,
+    defaultErrorMsg: "Failed to get role detail",
+  });
+}
+
+export function aclRoleCreate(role: { name: string; description: string; policies?: string[] }): Promise<void> {
+  return alovaCall("/acl/role", {
+    name: "aclRoleCreate",
+    method: "POST",
+    withToken: true,
+    expectedStatus: 201,
+    body: role,
+    defaultErrorMsg: "Failed to create role",
+  });
+}
+
+export function aclRoleUpdate(b64roleName: string, policies: string[]): Promise<void> {
+  return alovaCall(`/acl/role/${b64roleName}`, {
+    name: "aclRoleUpdate",
+    method: "PUT",
+    withToken: true,
+    expectedStatus: 204,
+    body: { policies },
+    defaultErrorMsg: "Failed to update role",
+  });
+}
+
+export function aclRoleDelete(b64roleName: string): Promise<void> {
+  return alovaCall(`/acl/role/${b64roleName}`, {
+    name: "aclRoleDelete",
+    method: "DELETE",
+    withToken: true,
+    expectedStatus: 204,
+    defaultErrorMsg: "Failed to delete role",
+  });
 }
 
 /* 一堆封装的方法：导入导出 */

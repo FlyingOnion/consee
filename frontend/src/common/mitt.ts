@@ -14,6 +14,8 @@ export type Event = {
   tokenDelete: void;
   policyCreate: void;
   policyDelete: void;
+  roleCreate: void;
+  roleDelete: void;
   openNotificationsChange: number;
   notificationResolve: void;
 };

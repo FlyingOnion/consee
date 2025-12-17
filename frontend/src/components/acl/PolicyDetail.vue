@@ -96,7 +96,7 @@ function deletePolicy() {
 
       <!-- Tokens Section -->
       <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div class="px-4 py-3 border-b border-gray-200">
+        <div class="border-b border-gray-200">
           <h3 class="text-lg font-medium text-gray-900 flex items-center">
             <i class="w-5 h-5 i-tabler-key mr-2 text-purple-500" />
             Tokens

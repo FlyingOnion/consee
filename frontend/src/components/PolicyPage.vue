@@ -100,10 +100,12 @@ setDetail();
 const debouncedSetDetail = debounce(setDetail, 50);
 
 watch(currentPolicyName, debouncedSetDetail);
+
+const splitview = ref<InstanceType<typeof SplitView> | null>(null);
 </script>
 
 <template>
-  <SplitView :loading :error :title="t('policyPage.title')" :current="currentPolicyName">
+  <SplitView ref="splitview" :loading :error :title="t('policyPage.title')" :current="currentPolicyName">
     <template #controls>
       <FullScreenModal>
         <template #trigger="{ open }">
@@ -120,7 +122,7 @@ watch(currentPolicyName, debouncedSetDetail);
       </FullScreenModal>
     </template>
     <template #list>
-      <PolicyList :current="currentPolicyName" :data="policyList" @item-click="onItemClick" />
+      <PolicyList :mobile="splitview?.isMobile" :current="currentPolicyName" :data="policyList" @item-click="onItemClick" />
     </template>
 
     <!-- Token Detail Section -->

@@ -97,10 +97,12 @@ setDetail();
 const debouncedSetDetail = debounce(setDetail, 50);
 
 watch(currentToken, debouncedSetDetail);
+
+const splitview = ref<InstanceType<typeof SplitView> | null>(null);
 </script>
 
 <template>
-  <SplitView :loading :error :title="t('tokenPage.title')" :current="currentTokenName">
+  <SplitView ref="splitview" :loading :error :title="t('tokenPage.title')" :current="currentTokenName">
     <template #controls>
       <FullScreenModal>
         <template #trigger="{ open }">
@@ -117,7 +119,7 @@ watch(currentToken, debouncedSetDetail);
       </FullScreenModal>
     </template>
     <template #list>
-      <TokenList et="token" :t="currentToken" :data="tokenList" @item-click="onItemClick" />
+      <TokenList :mobile="splitview?.isMobile" et="token" :t="currentToken" :data="tokenList" @item-click="onItemClick" />
     </template>
 
     <!-- Token Detail Section -->

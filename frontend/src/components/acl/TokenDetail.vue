@@ -105,11 +105,15 @@ function deleteToken() {
         </div>
       </div>
 
-      <!-- Policies Section -->
-      <Drawer title="Policies" open>
-        <template v-if="hasExclusivePolicy">
-          <div class="space-y-2">
-            <RouterLink v-for="policy in data.policies" :key="policy.name"
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div class="border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900 flex items-center gap-2">
+            <i class="w-5 h-5 i-tabler-file-text text-green-500" />
+            Policy Rules
+          </h3>
+        </div>
+        <div class="py-4">
+          <RouterLink v-for="policy in data.policies" :key="policy.name"
               :to="`/acl/policy/${b64Encode(policy.name)}`"
               class="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors duration-200">
               <div class="flex items-center">
@@ -121,13 +125,21 @@ function deleteToken() {
                 Exclusive
               </span>
             </RouterLink>
+        </div>
+      </div>
+
+      <!-- Policies Section -->
+      <!-- <Drawer title="Policies" open>
+        <template v-if="hasExclusivePolicy">
+          <div class="space-y-2">
+            
           </div>
         </template>
         <div v-else flex flex-col gap-2>
           <PolicySelectAll ref="policyselect" excl-status="non-exclusive"
             :selected-policies="data.policies.map(({ id }) => id)" />
         </div>
-      </Drawer>
+      </Drawer> -->
 
       <!-- Roles Section -->
       <Drawer title="Roles" open>

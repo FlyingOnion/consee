@@ -59,6 +59,14 @@
     "selectPrompt": "Select a policy from the list to view details",
     "refreshFailed": "Failed to refresh policy list: {message}. Try reloading the page."
   },
+  "rolePage": {
+    "resource": "role",
+    "title": "Role List", 
+    "newRole": "New Role",
+    "createNewRole": "Create new role",
+    "selectPrompt": "Select a role from the list to view details",
+    "refreshFailed": "Failed to refresh role list: {message}. Try reloading the page."
+  },
   "splitView": {
     "hide": "Hide",
     "show": "Show",

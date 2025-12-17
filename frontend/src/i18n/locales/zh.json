@@ -59,6 +59,14 @@
     "selectPrompt": "从列表中选择一个策略以查看详情",
     "refreshFailed": "刷新策略列表失败：{message}。请重新加载页面。"
   },
+  "rolePage": {
+    "resource": "角色",
+    "title": "角色列表",
+    "newRole": "新建角色",
+    "createNewRole": "创建新角色",
+    "selectPrompt": "从列表中选择一个角色以查看详情",
+    "refreshFailed": "刷新角色列表失败：{message}。请重新加载页面。"
+  },
   "splitView": {
     "hide": "隐藏",
     "show": "显示",

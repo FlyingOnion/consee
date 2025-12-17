@@ -187,6 +187,13 @@ export interface PolicyDetailInfo {
   tokens: ACLLink[];
 }
 
+export interface RoleDetailInfo {
+  id: string;
+  name: string;
+  description: string;
+  policies: ACLLink[];
+}
+
 type PolicyFormRuleType =
   | "acl"
   | "agent"

@@ -2,6 +2,7 @@
 import type { ACLLink } from "../../common/kz";
 
 interface Props {
+  mobile?: boolean;
   current: string;
   data: ACLLink[];
   onItemClick: (current: string) => void;
@@ -39,7 +40,7 @@ defineProps<Props>();
                   policy.name === current ? 'text-blue-900' : 'text-gray-900',
                 ]"
               >
-                {{ policy.name.length > 32 ? policy.name.slice(0, 32) + "..." : policy.name }}
+                {{ (policy.name.length > 32 && !mobile) ? policy.name.slice(0, 32) + "..." : policy.name }}
               </p>
               <p
                 :class="[

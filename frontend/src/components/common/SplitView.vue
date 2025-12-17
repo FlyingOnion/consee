@@ -101,6 +101,10 @@ function updateScreenSize() {
 onMounted(() => {
   window.addEventListener("resize", updateScreenSize);
 });
+
+defineExpose({
+  isMobile: computed(() => isMobile.value),
+});
 </script>
 
 <style scoped>
