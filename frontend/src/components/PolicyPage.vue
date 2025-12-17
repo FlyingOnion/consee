@@ -133,7 +133,7 @@ const splitview = ref<InstanceType<typeof SplitView> | null>(null);
     </div>
 
     <template #empty>
-      <EmptyView :resource="t('policyPage.newPolicy')">
+      <EmptyView :resource="t('policyPage.resource')">
         <p class="text-sm">{{ t('policyPage.selectPrompt') }}</p>
       </EmptyView>
     </template>
