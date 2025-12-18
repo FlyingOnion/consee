@@ -1,7 +1,6 @@
 import type { Method, RequestBody } from "alova";
 import {
   alova,
-  b64Encode,
   type ACLLink,
   type CreateTokenRequest,
   type KeyValue,
@@ -380,24 +379,15 @@ export function aclRoleDelete(b64roleName: string): Promise<void> {
 
 export interface ExportReq {
   keys?: string[];
-  include_acl?: boolean;
+  acl?: boolean;
   format?: string;
-}
-
-function exportReqToQuery(req?: ExportReq): { [key: string]: any } | undefined {
-  return req
-    ? {
-        keys: (req.keys || []).map((k) => b64Encode(k)),
-        include_acl: req.include_acl ? "1" : "0",
-        format: req.format,
-      }
-    : undefined;
 }
 
 export function wExport(req?: ExportReq): Promise<Blob> {
   return alovaCall(`/export`, {
     name: "wExport",
-    query: exportReqToQuery(req),
+    method: "POST",
+    body: req,
     withToken: true,
     transform: respToBlob,
     defaultErrorMsg: "Failed to export resources",

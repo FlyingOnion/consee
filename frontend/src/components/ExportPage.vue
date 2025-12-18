@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import TransferBox from "./common/TransferBox.vue";
 import { kvList, wExport } from "../common/alova";
 import { toast } from "vue3-toastify";
@@ -42,7 +42,7 @@ function handleExport() {
   }
   wExport({
     keys: selectedKeys,
-    include_acl: aclEnabled.value,
+    acl: aclEnabled.value,
     format: exportFormat.value,
   }).then((blob) => {
     const date = new Date();
