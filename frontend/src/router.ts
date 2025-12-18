@@ -4,7 +4,7 @@ import HomePage from "./components/HomePage.vue";
 import KeyValuePage from "./components/KeyValuePage.vue";
 import TokenPage from "./components/TokenPage.vue";
 import PolicyPage from "./components/PolicyPage.vue";
-import ImportPage from "./components/import-export/ImportPage.vue";
+import ImportPage from "./components/ImportPage.vue";
 import ExportPage from "./components/ExportPage.vue";
 import RolePage from "./components/RolePage.vue";
 

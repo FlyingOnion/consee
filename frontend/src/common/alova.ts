@@ -393,3 +393,36 @@ export function wExport(req?: ExportReq): Promise<Blob> {
     defaultErrorMsg: "Failed to export resources",
   });
 }
+
+export interface ImportResponse {
+  successes: {
+    keys: number;
+    tokens: number;
+    policies: number;
+  },
+  conflicts: {
+    kind: string;
+    param: string;
+  }[],
+  errors: {
+    kind: string;
+    param: string;
+    cause: string;
+  }[]
+}
+
+export function wImport(file: File, dryrun?: boolean): Promise<ImportResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (dryrun) {
+    formData.append('dryrun', '1');
+  }
+  return alovaCall(`/import`, {
+    name: "wImport",
+    method: "POST",
+    withToken: true,
+    body: formData,
+    transform: respToJson<ImportResponse>,
+    defaultErrorMsg: "Failed to import resources",
+  });
+}
