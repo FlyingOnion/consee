@@ -170,7 +170,7 @@ function doImport(dryrun?: boolean) {
           </div>
         </div>
 
-        <div v-if="nErrors > 0" class="bg-red-50 rounded-lg p-4 border border-red-200">
+        <div class="bg-red-50 rounded-lg p-4 border border-red-200">
           <div class="flex items-center">
             <svg class="w-8 h-8 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
