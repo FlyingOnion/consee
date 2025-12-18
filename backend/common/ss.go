@@ -6,6 +6,6 @@ package common
 const ConseeInternalKeyPrefix = ".consee-internal/"
 
 const PolicyNameGlobalManagement = "global-management"
-const PolicyNameBuiltinGlobalReadonly = "builtin/global-readonly"
+const PolicyNameBuiltinGlobalReadonly = "builtin/global-read-only"
 
 const ConseeAdmin = "consee-admin"
