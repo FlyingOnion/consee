@@ -99,7 +99,7 @@ func (a *adminService) DeleteValueType(ctx context.Context, b64key string) error
 }
 
 func (a *adminService) GetKVHistory(ctx context.Context, b64key string) ([]string, error) {
-	return nil, errNotImplemented
+	return []string{}, errNotImplemented
 }
 
 func (a *adminService) AddNewHistoryVersion(ctx context.Context, b64key, version, oldValue string) error {

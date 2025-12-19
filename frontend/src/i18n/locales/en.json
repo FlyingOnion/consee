@@ -29,11 +29,6 @@
     "logout": "Log out",
     "notificationError": "Failed to get notification status, please refresh the page and try again"
   },
-  "tokenApplication": {
-    "noTokenPrompt": "If you have no ACL token(s), click",
-    "here": "here",
-    "toApply": "to apply"
-  },
   "keyValue": {
     "title": "Key List",
     "resource": "key",

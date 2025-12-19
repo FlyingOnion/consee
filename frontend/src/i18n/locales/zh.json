@@ -29,11 +29,6 @@
     "logout": "退出登录",
     "notificationError": "获取通知状态失败，请刷新页面重试"
   },
-  "tokenApplication": {
-    "noTokenPrompt": "如果您没有 ACL 令牌，请点击",
-    "here": "这里",
-    "toApply": "申请"
-  },
   "keyValue": {
     "resource": "配置",
     "title": "配置列表",
