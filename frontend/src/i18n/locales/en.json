@@ -79,5 +79,14 @@
     "moveToSelected": "Move to Selected",
     "goToAvailable": "Go To Available",
     "goToSelected": "Go To Selected"
+  },
+  "export": {
+    "title": "Export",
+    "kv": "KeyValue Config Items",
+    "acl": "ACL Resources",
+    "format": "Export Format",
+    "aclLabel": "Export all ACL resources, including tokens, policies and roles",
+    "jsonPrompt": "Exported JSON file is compatible with Consul's KV API. You can use 'consul kv import' to import the file to Consul. This format does not support exporting history versions.",
+    "confirm": "Export"
   }
 }

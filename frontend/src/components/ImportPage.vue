@@ -2,6 +2,9 @@
 import { computed, ref } from 'vue';
 import { wImport, type ImportResponse } from '../common/alova';
 import { toast } from 'vue3-toastify';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 // Import page - content placeholder
 const fileinput = ref<HTMLInputElement | null>(null);
@@ -14,6 +17,11 @@ const nErrors = computed(() => {
 const nConflicts = computed(() => {
   return response.value ? response.value.conflicts.length : 0;
 })
+const nSuccesses = computed(() => {
+  return response.value ? response.value.successes.length : 0;
+})
+
+const previewing = ref(false)
 
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -31,12 +39,14 @@ function handleDrop(event: DragEvent) {
   if (file && (file.type === 'application/json' || file.name.endsWith('.zip'))) {
     selectedFile.value = file;
     response.value = undefined;
+    previewing.value = true
   }
 }
 
 function clearFile() {
   selectedFile.value = undefined;
   response.value = undefined;
+  previewing.value = false
   if (fileinput.value) {
     fileinput.value.value = '';
   }
@@ -59,6 +69,7 @@ function doImport(dryrun?: boolean) {
   }
   wImport(selectedFile.value, dryrun).then((r) => {
     response.value = r
+    previewing.value = dryrun || false
   }).catch((e: Error) => {
     toast.error(e);
   })
@@ -68,8 +79,8 @@ function doImport(dryrun?: boolean) {
 
 <template>
   <div class="flex-grow flex flex-col p-6 gap-3 overflow-y-auto">
-    <h1 class="text-2xl font-semibold text-gray-900">Import Resources</h1>
-    <p class="text-gray-600">Import your data from JSON or archived file</p>
+    <h1 class="text-2xl font-semibold text-gray-900">{{ t("import.title") }}</h1>
+    <p class="text-gray-600">{{ t("import.subtitle") }}</p>
     <input ref="fileinput" type="file" class="hidden" accept=".json,.zip" @change="handleFileChange" />
 
     <div v-if="selectedFile" class="flex flex-col p-4 gap-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -93,7 +104,7 @@ function doImport(dryrun?: boolean) {
       </div>
       <div class="flex flex-col md:flex-row gap-2">
         <button
-          class="px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-6 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-blue-500 text-white font-medium rounded cursor-pointer hover:bg-blue-6 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="response !== undefined" @click="importDryrun">
           <span class="flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,17 +115,18 @@ function doImport(dryrun?: boolean) {
                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
               </path>
             </svg>
-            Import Preview
+            {{ t("import.importPreview") }}
           </span>
         </button>
         <button
-          class="px-4 py-2 bg-green-500 text-white font-medium rounded hover:bg-green-600 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!previewing"
+          class="px-4 py-2 bg-green-500 text-white font-medium rounded cursor-pointer hover:bg-green-600 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           @click="importFile">
           <span class="flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            Import Data
+            {{ t("import.importData") }}
           </span>
         </button>
       </div>
@@ -129,19 +141,20 @@ function doImport(dryrun?: boolean) {
             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
         </svg>
         <h3 class="text-lg font-semibold text-gray-700 mb-2">
-          Click to browse or drag and drop
+          {{ t("import.dragDrop") }}
         </h3>
-        <p class="text-sm text-gray-500">Support for .json and .zip files</p>
+        <p class="text-sm text-gray-500">{{ t("import.supportedFormats") }}</p>
       </div>
     </div>
 
-
-
-    <div v-if="response" class="bg-gray-50 rounded-lg p-8">
-      <h3 class="text-2xl font-bold text-gray-900 mb-6">Import Results</h3>
-
+    <div v-if="response" class="bg-gray-50 rounded-lg p-8 flex flex-col gap-6">
+      <h3 class="text-2xl font-bold text-gray-900">{{ t("import.results") }}</h3>
+      <div v-if="previewing" class="flex items-center gap-2">
+        <i class="w-4 h-4 i-tabler-info-circle text-blue"></i>
+        <p class="text-sm text-gray-500">{{ t("import.importResultNotification") }}</p>
+      </div>
       <!-- Summary -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-green-50 rounded-lg p-4 border border-green-200">
           <div class="flex items-center">
             <svg class="w-8 h-8 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,14 +162,13 @@ function doImport(dryrun?: boolean) {
                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <div>
-              <p class="text-2xl font-bold text-green-700">{{
-                response.successes.keys + response.successes.policies + response.successes.tokens || 0 }}</p>
-              <p class="text-sm text-green-600">Imported Successfully</p>
+              <p class="text-2xl font-bold text-green-700">{{ nSuccesses }}</p>
+              <p class="text-sm text-green-600">{{ t("import.successes") }}</p>
             </div>
           </div>
         </div>
 
-        <div v-if="nConflicts > 0" class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+        <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
           <div class="flex items-center">
             <svg class="w-8 h-8 text-yellow-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -165,7 +177,7 @@ function doImport(dryrun?: boolean) {
             </svg>
             <div>
               <p class="text-2xl font-bold text-yellow-700">{{ nConflicts }}</p>
-              <p class="text-sm text-yellow-600">Conflicts Found</p>
+              <p class="text-sm text-yellow-600">{{ t("import.conflicts") }}</p>
             </div>
           </div>
         </div>
@@ -178,14 +190,38 @@ function doImport(dryrun?: boolean) {
             </svg>
             <div>
               <p class="text-2xl font-bold text-red-700">{{ nErrors }}</p>
-              <p class="text-sm text-red-600">Errors Found</p>
+              <p class="text-sm text-red-600">{{ t("import.errors") }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Successes -->
+      <div v-if="nSuccesses > 0">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+          <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Successes
+        </h3>
+        <div class="bg-green-50 rounded-lg border border-green-200">
+          <div v-for="(success, index) in response.successes" :key="index"
+            class="p-3 border-b border-green-200 last:border-b-0">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="inline-block px-2 py-1 bg-green-200 text-green-800 text-xs font-medium rounded-full mr-2">
+                  {{ success.kind }}
+                </span>
+                <span class="text-gray-900 font-medium">{{ success.param }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Conflicts -->
-      <div v-if="nConflicts > 0" class="mb-6">
+      <div v-if="nConflicts > 0">
         <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
           <svg class="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -244,8 +280,8 @@ function doImport(dryrun?: boolean) {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <h3 class="text-xl font-bold text-green-800 mb-2">Import Successful!</h3>
-        <p class="text-green-700">Your data has been imported successfully without any issues.</p>
+        <h3 class="text-xl font-bold text-green-800 mb-2">{{ t("import.importSuccessful") }}</h3>
+        <p class="text-green-700">{{ t("import.importSuccessfulDesc") }}</p>
       </div>
     </div>
   </div>

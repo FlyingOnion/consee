@@ -73,7 +73,7 @@ export async function alovaCall<T = Response>(
     expectedStatus?: number;
     defaultErrorMsg?: string;
     transform?: (resp: Response) => Promise<T>;
-    hitSource?: HitSource
+    hitSource?: HitSource;
   },
 ): Promise<T>;
 
@@ -321,7 +321,7 @@ export function aclPolicyRuleValidate(rule: string): Promise<PolicyFormRule[]> {
     method: "POST",
     body: rule,
     transform: respToJson<PolicyFormRule[]>,
-  })
+  });
 }
 
 /* Role API */
@@ -343,7 +343,11 @@ export function aclRoleGetDetail(b64roleName: string): Promise<RoleDetailInfo> {
   });
 }
 
-export function aclRoleCreate(role: { name: string; description: string; policies?: string[] }): Promise<void> {
+export function aclRoleCreate(role: {
+  name: string;
+  description: string;
+  policies?: string[];
+}): Promise<void> {
   return alovaCall("/acl/role", {
     name: "aclRoleCreate",
     method: "POST",
@@ -394,28 +398,23 @@ export function wExport(req?: ExportReq): Promise<Blob> {
   });
 }
 
+interface ImportResponseItem {
+  kind: string;
+  param: string;
+  cause: string;
+}
+
 export interface ImportResponse {
-  successes: {
-    keys: number;
-    tokens: number;
-    policies: number;
-  },
-  conflicts: {
-    kind: string;
-    param: string;
-  }[],
-  errors: {
-    kind: string;
-    param: string;
-    cause: string;
-  }[]
+  successes: ImportResponseItem[];
+  conflicts: ImportResponseItem[];
+  errors: ImportResponseItem[];
 }
 
 export function wImport(file: File, dryrun?: boolean): Promise<ImportResponse> {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
   if (dryrun) {
-    formData.append('dryrun', '1');
+    formData.append("dryrun", "1");
   }
   return alovaCall(`/import`, {
     name: "wImport",
