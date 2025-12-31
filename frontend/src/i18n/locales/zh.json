@@ -88,5 +88,19 @@
     "aclLabel": "导出所有访问控制资源，包括访问令牌、策略和角色",
     "jsonPrompt": "JSON 格式与 Consul KV 兼容，可以直接用 consul kv import 命令导入。该格式不支持导出配置项的历史版本。",
     "confirm": "导出"
+  },
+  "import": {
+    "title": "导入资源",
+    "subtitle": "从 JSON 或压缩文件导入数据",
+    "dragDrop": "点击浏览或拖放文件",
+    "supportedFormats": "支持 .json 和 .zip 文件",
+    "selectedFile": "已选文件",
+    "importPreview": "预览导入",
+    "importData": "导入数据",
+    "results": "导入结果",
+    "successes": "项将导入成功",
+    "conflicts": "项将与现有配置冲突",
+    "errors": "项错误",
+    "importResultNotification": "实际导入时，冲突项将根据您的选择被跳过或覆盖，错误项将被跳过。如果您是管理员，实际导入时结果应与预览一致。"
   }
 }

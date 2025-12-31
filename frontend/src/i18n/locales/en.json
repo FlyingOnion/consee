@@ -88,5 +88,19 @@
     "aclLabel": "Export all ACL resources, including tokens, policies and roles",
     "jsonPrompt": "Exported JSON file is compatible with Consul's KV API. You can use 'consul kv import' to import the file to Consul. This format does not support exporting history versions.",
     "confirm": "Export"
+  },
+  "import": {
+    "title": "Import Resources",
+    "subtitle": "Import your data from JSON or archived file",
+    "dragDrop": "Click to browse or drag and drop",
+    "supportedFormats": "Support for .json and .zip files",
+    "selectedFile": "Selected File",
+    "importPreview": "Import Preview",
+    "importData": "Import Data",
+    "results": "Import Results",
+    "successes": "Imported Successfully",
+    "conflicts": "Conflicts Found",
+    "errors": "Errors Found",
+    "importResultNotification": "When importing, all conflicts will be resolved according to your choice, and all errors will be skipped. If you login with admin token, the final result should be same as preview."
   }
 }
