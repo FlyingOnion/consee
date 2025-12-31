@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	errUnknown      = errors.New("unknown error")
-	errTokenEmpty   = errors.New("token is empty")
-	errInvalidToken = errors.New("invalid token")
-	errIdEmpty      = errors.New("id is empty")
-	errInvalidFile  = errors.New("invalid file")
+	errUnknown           = errors.New("unknown error")
+	errTokenEmpty        = errors.New("token is empty")
+	errInvalidToken      = errors.New("invalid token")
+	errIdEmpty           = errors.New("id is empty")
+	errInvalidFile       = errors.New("invalid file")
+	errInvalidFileFormat = errors.New("invalid file format")
 )
 
 func unknownError() *StatusError {

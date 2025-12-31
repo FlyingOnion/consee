@@ -30,25 +30,17 @@ type BatchUpdateRequest struct {
 
 // import
 
-type Conflicts ExportMetadata
-
-type Successes struct {
-	Keys     int `json:"keys"`
-	Tokens   int `json:"tokens"`
-	Policies int `json:"policies"`
-}
-
-type ImportError struct {
+type ImportResponseItem struct {
 	// Kind specifies the error occurs on which kind when importing
 	Kind  string `json:"kind"`
 	Param string `json:"param"`
-	Cause string `json:"cause"`
+	Cause string `json:"cause,omitempty"`
 }
 
 type ImportResponse struct {
-	Successes `json:"successes"`
-	Conflicts `json:"conflicts"`
-	Errors    []ImportError `json:"errors"`
+	Successes []ImportResponseItem `json:"successes"`
+	Conflicts []ImportResponseItem `json:"conflicts"`
+	Errors    []ImportResponseItem `json:"errors"`
 }
 
 type OnConflictPolicy string
@@ -59,6 +51,7 @@ const (
 )
 
 type ImportRequest struct {
+	Format      string
 	Dryrun      bool
 	OnConflict  OnConflictPolicy
 	FileContent []byte
@@ -66,6 +59,31 @@ type ImportRequest struct {
 
 // export
 
+type DryrunMetadata struct {
+	Keys     []string  `json:"keys"`
+	Tokens   []ACLLink `json:"tokens"`
+	Policies []string  `json:"policies"`
+}
+
+type CompatibleKVMetaList []*CompatibleKVMeta
+
+func (l CompatibleKVMetaList) DryrunMetadata() *DryrunMetadata {
+	keys := make([]string, len(l))
+	for i, kv := range l {
+		keys[i] = kv.Key
+	}
+	return &DryrunMetadata{
+		Keys: keys,
+	}
+}
+
+type CompatibleKVMeta struct {
+	Key   string `json:"key"`
+	Flags uint64 `json:"flags"`
+	Value []byte `json:"value"`
+}
+
+// zip export
 type ExportedKVMeta struct {
 	Name            string   `json:"name"`
 	ValueType       string   `json:"value_type"`
@@ -73,9 +91,21 @@ type ExportedKVMeta struct {
 }
 
 type ExportMetadata struct {
-	Keys     []*ExportedKVMeta `json:"keys" yaml:"keys"`
-	Tokens   []ACLLink         `json:"tokens" yaml:"tokens"`
-	Policies []string          `json:"policies" yaml:"policies"`
+	Keys     []ExportedKVMeta `json:"keys" yaml:"keys"`
+	Tokens   []ACLLink        `json:"tokens" yaml:"tokens"`
+	Policies []string         `json:"policies" yaml:"policies"`
+}
+
+func (m *ExportMetadata) DryrunMetadata() *DryrunMetadata {
+	keys := make([]string, len(m.Keys))
+	for i, kv := range m.Keys {
+		keys[i] = kv.Name
+	}
+	return &DryrunMetadata{
+		Keys:     keys,
+		Tokens:   m.Tokens,
+		Policies: m.Policies,
+	}
 }
 
 type ExportRequest struct {

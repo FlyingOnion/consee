@@ -78,20 +78,46 @@ validateIdNameMapping:
 }
 
 func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err error) {
-	if req.Format != "zip" {
-		return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "unsupported format, only zip is supported"}
+	switch req.Format {
+	case "json":
+		return s.exportJSON(ctx, req)
+	case "zip":
+		return s.exportZip(ctx, req)
 	}
+	return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "unsupported format"}
+}
 
-	// 如果没有指定keys，则导出所有key
-	keys := req.Keys
-	if len(keys) == 0 {
-		allKeys, err := s.kv.ListKeys(ctx)
+func (s *a2) exportJSON(ctx context.Context, req *ExportRequest) (data []byte, err error) {
+	var buf buffer.Buffer
+	buf.WriteByte('[')
+	for i, key := range req.Keys {
+		resp, err := s.kv.Get(ctx, key)
 		if err != nil {
-			slog.Error("failed to list all keys during export", "error", err)
 			return nil, err
 		}
-		keys = allKeys
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(`{"key": "`).
+			WriteJsonSafeString(resp.Key).WriteString(`","flags": 0,"value": "`).
+			WriteString(base64.RawStdEncoding.EncodeToString([]byte(resp.Value))).
+			WriteString(`"}`)
 	}
+	buf.WriteByte(']')
+	return buf.Bytes(), nil
+}
+
+func (s *a2) exportZip(ctx context.Context, req *ExportRequest) (data []byte, err error) {
+	// 如果没有指定keys，则导出所有key
+	keys := req.Keys
+	// if len(keys) == 0 {
+	// 	allKeys, err := s.kv.ListKeys(ctx)
+	// 	if err != nil {
+	// 		slog.Error("failed to list all keys during export", "error", err)
+	// 		return nil, err
+	// 	}
+	// 	keys = allKeys
+	// }
 
 	// 创建zip文件
 	var buf buffer.Buffer
@@ -102,7 +128,7 @@ func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err e
 		}
 	}()
 
-	kvMeta := make([]*ExportedKVMeta, 0, len(keys))
+	kvMeta := make([]ExportedKVMeta, 0, len(keys))
 	// 导出每个key的值
 	for _, key := range keys {
 		kv, err := s.kv.Get(ctx, key)
@@ -132,8 +158,10 @@ func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err e
 
 		historyKeys, err := s.admin.GetKVHistory(ctx, b64key)
 		if err != nil {
-			slog.Error("failed to get kv history during export", "key", key, "b64key", b64key, "error", err)
-			return nil, errFailedToConnectConsul
+			dErr := err.(*DomainError)
+			if dErr.Code != DomainErrorCodeNotImplemented {
+				slog.Error("failed to get kv history during export", "key", key, "b64key", b64key, "error", dErr.Message)
+			}
 		}
 		for _, ht := range historyKeys {
 			htvalue, err := s.admin.GetKVHistoryValue(ctx, b64key, ht)
@@ -148,7 +176,7 @@ func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err e
 			}
 			f.Write([]byte(htvalue))
 		}
-		kvMeta = append(kvMeta, &ExportedKVMeta{
+		kvMeta = append(kvMeta, ExportedKVMeta{
 			Name:            key,
 			ValueType:       vtkv,
 			HistoryVersions: historyKeys,
@@ -175,7 +203,7 @@ func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err e
 			if len(token.Policies) == 1 && token.Policies[0].Name == "--"+token.AccessorID {
 				// exclusive，连带专有策略的规则一起保存
 				policyMode = "exclusive"
-				policy, err := s.acl.ReadPolicy(ctx, token.Policies[0].ID)
+				policy, err := s.acl.ReadPolicy(ctx, token.Policies[0].Name)
 				if err != nil {
 					return nil, err
 				}
@@ -209,7 +237,7 @@ func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err e
 			if p.Name == PolicyNameGlobalManagement || p.Name == PolicyNameBuiltinGlobalReadonly {
 				continue
 			}
-			policy, err := s.acl.ReadPolicy(ctx, p.ID)
+			policy, err := s.acl.ReadPolicy(ctx, p.Name)
 			if err != nil {
 				slog.Error("failed to read policy during export", "policyId", p.ID, "policyName", p.Name, "error", err)
 				return nil, err
@@ -245,8 +273,86 @@ func (s *a2) Export(ctx context.Context, req *ExportRequest) (data []byte, err e
 }
 
 func (s *a2) Import(ctx context.Context, req *ImportRequest) (*ImportResponse, error) {
+	slog.Info("a2 import", "dryrun", req.Dryrun, "format", req.Format)
+	switch req.Format {
+	case "zip":
+		return s.importZip(ctx, req)
+	case "json":
+		return s.importJson(ctx, req)
+	}
+	return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "invalid file format"}
+}
+
+func (s *a2) importJson(ctx context.Context, req *ImportRequest) (*ImportResponse, error) {
+	var kvs CompatibleKVMetaList
+	err := json.Unmarshal(req.FileContent, &kvs)
+	if err != nil {
+		slog.Error("failed to unmarshal json during import", "error", err)
+		return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "invalid json file"}
+	}
+	resp := s.ImportDryrun(ctx, kvs.DryrunMetadata())
+	if req.Dryrun {
+		return resp, nil
+	}
+
+	return s.doImportJson(ctx, kvs, req.OnConflict), nil
+}
+
+func (s *a2) doImportJson(ctx context.Context, kvs CompatibleKVMetaList, onConflict OnConflictPolicy) *ImportResponse {
+	resp := &ImportResponse{
+		Successes: []ImportResponseItem{},
+		Conflicts: []ImportResponseItem{},
+	}
+	for _, kv := range kvs {
+		key, value := kv.Key, string(kv.Value)
+
+		// 创建或更新KV
+		existingKV, _ := s.kv.Get(ctx, key)
+		if existingKV == nil {
+			// 如果key不存在，创建新的
+			err := s.kv.Create(ctx, &CreateKeyValueRequest{
+				Key:       key,
+				Value:     value,
+				ValueType: "plaintext",
+			})
+			if err != nil {
+				resp.Errors = append(resp.Errors, ImportResponseItem{
+					Kind:  "kv",
+					Param: key,
+					Cause: err.Error(),
+				})
+			}
+			resp.Successes = append(resp.Successes, ImportResponseItem{
+				Kind:  "kv",
+				Param: key,
+			})
+			continue
+		}
+
+		if existingKV.Value != value {
+			// 值一样时直接跳过更新，否则记录冲突
+			if onConflict == OnConflictPolicyReplace {
+				// 如果key存在，更新值
+				err := s.kv.Update(ctx, key, value)
+				if err != nil {
+					resp.Errors = append(resp.Errors, ImportResponseItem{
+						Kind:  "kv",
+						Param: key,
+						Cause: err.Error(),
+					})
+				}
+				b64key := base64.StdEncoding.EncodeToString([]byte(key))
+				s.admin.WriteValueType(ctx, b64key, "plaintext")
+			}
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "kv", Param: key})
+		}
+	}
+	return resp
+}
+
+func (s *a2) importZip(ctx context.Context, req *ImportRequest) (*ImportResponse, error) {
 	if binary.LittleEndian.Uint32(req.FileContent[:4]) != 0x04034b50 {
-		return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "invalid file format"}
+		return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "invalid zip file"}
 	}
 	r, err := zip.NewReader(bytes.NewReader(req.FileContent), int64(len(req.FileContent)))
 	if err != nil {
@@ -259,40 +365,38 @@ func (s *a2) Import(ctx context.Context, req *ImportRequest) (*ImportResponse, e
 		slog.Error("failed to open metadata.json during import", "error", err)
 		return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "invalid file format: metadata.json not found"}
 	}
-	var meta ExportMetadata
-	err = json.NewDecoder(f).Decode(&meta)
+	var exportmeta ExportMetadata
+	err = json.NewDecoder(f).Decode(&exportmeta)
 	if err != nil {
 		slog.Error("failed to decode metadata.json during import", "error", err)
 		return nil, &DomainError{Code: DomainErrorCodeInvalidInput, Message: "invalid file format: metadata.json is invalid"}
 	}
 	f.Close()
+	slog.Info("parse metadata file successfully")
+	slog.Debug("metadata", "keys", exportmeta.Keys, "tokens", exportmeta.Tokens, "policies", exportmeta.Policies)
 
-	resp := s.ImportDryrun(ctx, &meta)
-	if !req.Dryrun {
+	resp := s.ImportDryrun(ctx, exportmeta.DryrunMetadata())
+	if req.Dryrun {
 		return resp, nil
 	}
 
 	// 实际导入数据
-	return s.doImport(ctx, r, &meta, req.OnConflict), nil
+	return s.doImportZip(ctx, r, &exportmeta, req.OnConflict), nil
 }
 
-func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, onConflict OnConflictPolicy) *ImportResponse {
+func (s *a2) doImportZip(ctx context.Context, r *zip.Reader, meta *ExportMetadata, onConflict OnConflictPolicy) *ImportResponse {
 	resp := &ImportResponse{
-		Conflicts: Conflicts{
-			Keys:     []*ExportedKVMeta{},
-			Tokens:   []ACLLink{},
-			Policies: []string{},
-		},
-		Errors: []ImportError{},
+		Successes: []ImportResponseItem{},
+		Conflicts: []ImportResponseItem{},
+		Errors:    []ImportResponseItem{},
 	}
 	// 导入KV数据
 	for _, kv := range meta.Keys {
-		conflict := false
 		b64key := base64.StdEncoding.EncodeToString([]byte(kv.Name))
 		// 读取最新的值
 		f, err := r.Open("kv/" + b64key + "/latest")
 		if err != nil {
-			resp.Errors = append(resp.Errors, ImportError{
+			resp.Errors = append(resp.Errors, ImportResponseItem{
 				Kind:  "kv",
 				Param: kv.Name,
 				Cause: err.Error(),
@@ -303,7 +407,7 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 		valueBytes, err := io.ReadAll(f)
 		f.Close()
 		if err != nil {
-			resp.Errors = append(resp.Errors, ImportError{
+			resp.Errors = append(resp.Errors, ImportResponseItem{
 				Kind:  "kv",
 				Param: kv.Name,
 				Cause: err.Error(),
@@ -321,22 +425,25 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 				ValueType: kv.ValueType,
 			})
 			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "kv",
 					Param: kv.Name,
 					Cause: err.Error(),
 				})
 			}
+			resp.Successes = append(resp.Successes, ImportResponseItem{
+				Kind:  "kv",
+				Param: kv.Name,
+			})
 			goto importHistory
 		}
 		// 值一样时直接跳过更新，否则记录冲突
 		if existingKV.Value != string(valueBytes) {
-			conflict = true
 			if onConflict == OnConflictPolicyReplace {
 				// 如果key存在，更新值
 				err = s.kv.Update(ctx, kv.Name, string(valueBytes))
 				if err != nil {
-					resp.Errors = append(resp.Errors, ImportError{
+					resp.Errors = append(resp.Errors, ImportResponseItem{
 						Kind:  "kv",
 						Param: kv.Name,
 						Cause: err.Error(),
@@ -344,13 +451,14 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 				}
 				s.admin.WriteValueType(ctx, b64key, kv.ValueType)
 			}
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "kv", Param: kv.Name})
 		}
 	importHistory:
 		// 导入历史版本（如果有）
 		for _, history := range kv.HistoryVersions {
 			hf, err := r.Open("kv/" + b64key + "/" + history)
 			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "kv-history",
 					Param: kv.Name + ":" + history,
 					Cause: "history version not found",
@@ -360,7 +468,7 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 			historyValue, err := io.ReadAll(hf)
 			hf.Close()
 			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "kv-history",
 					Param: kv.Name + ":" + history,
 					Cause: "failed to read history version",
@@ -368,17 +476,12 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 				continue
 			}
 
-			// 保存历史版本到admin服务
+			// 保存历史版本
 			s.admin.AddNewHistoryVersion(ctx,
 				b64key,
 				history,
 				string(historyValue),
 			)
-		}
-		if conflict {
-			resp.Conflicts.Keys = append(resp.Conflicts.Keys, kv)
-		} else {
-			resp.Successes.Keys++
 		}
 	}
 
@@ -392,7 +495,7 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 		b64PolicyName := base64.StdEncoding.EncodeToString([]byte(policyName))
 		f, err := r.Open("policies/" + b64PolicyName)
 		if err != nil {
-			resp.Errors = append(resp.Errors, ImportError{
+			resp.Errors = append(resp.Errors, ImportResponseItem{
 				Kind:  "policy",
 				Param: policyName,
 				Cause: "policy not found",
@@ -404,7 +507,7 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 		err = json.NewDecoder(f).Decode(&policyReq)
 		f.Close()
 		if err != nil {
-			resp.Errors = append(resp.Errors, ImportError{
+			resp.Errors = append(resp.Errors, ImportResponseItem{
 				Kind:  "policy",
 				Param: policyName,
 				Cause: "invalid policy information",
@@ -412,35 +515,31 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 			continue
 		}
 
-		conflict := false
 		// 检查策略是否已存在
 		existingPolicy, _ := s.acl.ReadPolicy(ctx, policyName)
 		if existingPolicy == nil {
 			// 创建新策略
 			err = s.acl.CreatePolicy(ctx, &policyReq)
-			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+			if err == nil {
+				resp.Successes = append(resp.Successes, ImportResponseItem{Kind: "policy", Param: policyName})
+			} else {
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "policy",
 					Param: policyName,
 					Cause: err.Error(),
 				})
 			}
 		} else {
-			conflict = true
 			// 更新现有策略的规则
 			err = s.acl.UpdatePolicyRule(ctx, policyName, policyReq.Rules)
 			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "policy",
 					Param: policyName,
 					Cause: err.Error(),
 				})
 			}
-		}
-		if conflict {
-			resp.Conflicts.Policies = append(resp.Conflicts.Policies, policyName)
-		} else {
-			resp.Successes.Policies++
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "policy", Param: policyName})
 		}
 	}
 
@@ -448,9 +547,9 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 	for _, token := range meta.Tokens {
 		f, err := r.Open("tokens/" + token.ID)
 		if err != nil {
-			resp.Errors = append(resp.Errors, ImportError{
+			resp.Errors = append(resp.Errors, ImportResponseItem{
 				Kind:  "token",
-				Param: token.Name + "(ID:" + token.ID + ")",
+				Param: iritp(token.ID, token.Name),
 				Cause: "token not found",
 			})
 			continue // 跳过找不到的token
@@ -460,78 +559,74 @@ func (s *a2) doImport(ctx context.Context, r *zip.Reader, meta *ExportMetadata, 
 		err = json.NewDecoder(f).Decode(&tokenReq)
 		f.Close()
 		if err != nil {
-			resp.Errors = append(resp.Errors, ImportError{
+			resp.Errors = append(resp.Errors, ImportResponseItem{
 				Kind:  "token",
-				Param: token.Name + "(ID:" + token.ID + ")",
+				Param: iritp(token.ID, token.Name),
 				Cause: "invalid token information",
 			})
 			continue
 		}
 
-		conflict := false
 		// 检查token是否已存在
 		existingToken, _ := s.acl.ReadToken(ctx, token.ID)
 		if existingToken == nil {
 			// 创建新token
 			err = s.acl.CreateToken(ctx, &tokenReq)
-			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+			if err == nil {
+				resp.Successes = append(resp.Successes, ImportResponseItem{Kind: "token", Param: iritp(token.ID, token.Name)})
+			} else {
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "token",
-					Param: token.Name + "(ID:" + token.ID + ")",
+					Param: iritp(token.ID, token.Name),
 					Cause: err.Error(),
 				})
 			}
 		} else {
-			conflict = true
 			// 更新现有token
 			err = s.acl.UpdateToken(ctx, token.ID, &UpdateTokenRequest{
 				Policies: tokenReq.Policies,
 			})
 			if err != nil {
-				resp.Errors = append(resp.Errors, ImportError{
+				resp.Errors = append(resp.Errors, ImportResponseItem{
 					Kind:  "token",
-					Param: token.Name + "(ID:" + token.ID + ")",
+					Param: iritp(token.ID, token.Name),
 					Cause: err.Error(),
 				})
 			}
-		}
-		if conflict {
-			resp.Conflicts.Tokens = append(resp.Conflicts.Tokens, token)
-		} else {
-			resp.Successes.Tokens++
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "token", Param: iritp(token.ID, token.Name)})
 		}
 	}
 
 	return resp
 }
 
-func (s *a2) ImportDryrun(ctx context.Context, meta *ExportMetadata) *ImportResponse {
+func (s *a2) ImportDryrun(ctx context.Context, meta *DryrunMetadata) *ImportResponse {
 	resp := &ImportResponse{
-		Conflicts: Conflicts{
-			Keys:     []*ExportedKVMeta{},
-			Tokens:   []ACLLink{},
-			Policies: []string{},
-		},
-		Errors: []ImportError{},
+		Successes: []ImportResponseItem{},
+		Conflicts: []ImportResponseItem{},
+		Errors:    []ImportResponseItem{},
 	}
 
+	slog.Debug("dryrun meta", "keys", meta.Keys, "tokens", meta.Tokens, "policies", meta.Policies)
+
 	// 检查KV数据冲突
-	for _, kv := range meta.Keys {
-		existingKV, err := s.kv.Get(ctx, kv.Name)
-		if err == nil && existingKV != nil {
+	for _, key := range meta.Keys {
+		existingKV, err := s.kv.Get(ctx, key)
+		slog.Debug("kv get response", "k", key, "v", existingKV)
+		if existingKV != nil {
 			// Key已存在，记录冲突
-			resp.Conflicts.Keys = append(resp.Conflicts.Keys, kv)
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "kv", Param: key})
 			continue
 		}
 		dErr := err.(*DomainError)
 		if dErr.Code == DomainErrorCodeNotFound {
 			// Key不存在，可以安全导入
-			resp.Successes.Keys++
+			resp.Successes = append(resp.Successes, ImportResponseItem{Kind: "kv", Param: key})
 			continue
 		}
-		resp.Errors = append(resp.Errors, ImportError{
+		resp.Errors = append(resp.Errors, ImportResponseItem{
 			Kind:  "kv",
-			Param: kv.Name,
+			Param: key,
 			Cause: dErr.Message,
 		})
 	}
@@ -546,16 +641,16 @@ func (s *a2) ImportDryrun(ctx context.Context, meta *ExportMetadata) *ImportResp
 		existingPolicy, err := s.acl.ReadPolicy(ctx, policyName)
 		if err == nil && existingPolicy != nil {
 			// Policy已存在，记录冲突
-			resp.Conflicts.Policies = append(resp.Conflicts.Policies, policyName)
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "policy", Param: policyName})
 			continue
 		}
 		dErr := err.(*DomainError)
 		if dErr.Code == DomainErrorCodeNotFound {
 			// Policy不存在，可以安全导入
-			resp.Successes.Policies++
+			resp.Successes = append(resp.Successes, ImportResponseItem{Kind: "policy", Param: policyName})
 			continue
 		}
-		resp.Errors = append(resp.Errors, ImportError{
+		resp.Errors = append(resp.Errors, ImportResponseItem{
 			Kind:  "policy",
 			Param: policyName,
 			Cause: dErr.Message,
@@ -568,20 +663,25 @@ func (s *a2) ImportDryrun(ctx context.Context, meta *ExportMetadata) *ImportResp
 
 		if err == nil && existingToken != nil {
 			// Token已存在，记录冲突
-			resp.Conflicts.Tokens = append(resp.Conflicts.Tokens, token)
+			resp.Conflicts = append(resp.Conflicts, ImportResponseItem{Kind: "token", Param: iritp(token.ID, token.Name)})
 			continue
 		}
 		dErr := err.(*DomainError)
 		if dErr.Code == DomainErrorCodeNotFound {
 			// Token不存在，可以安全导入
-			resp.Successes.Tokens++
+			resp.Successes = append(resp.Successes, ImportResponseItem{Kind: "token", Param: iritp(token.ID, token.Name)})
+			continue
 		}
-		resp.Errors = append(resp.Errors, ImportError{
+		resp.Errors = append(resp.Errors, ImportResponseItem{
 			Kind:  "token",
-			Param: token.Name + "(ID:" + token.ID + ")",
+			Param: iritp(token.ID, token.Name),
 			Cause: dErr.Message,
 		})
 	}
-
+	slog.Debug("import response", "success", resp.Successes, "conflicts", resp.Conflicts, "errors", resp.Errors)
 	return resp
+}
+
+func iritp(tokenId, tokenName string) string {
+	return tokenName + "(ID:" + tokenId + ")"
 }

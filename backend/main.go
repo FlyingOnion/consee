@@ -55,6 +55,7 @@ parseFromFlags:
 		config.Consul.Token = t
 	}
 	if verbose > 0 {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
 		config.LogLevel = "debug"
 	}
 	if port > 0 {

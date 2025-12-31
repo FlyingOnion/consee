@@ -6,6 +6,7 @@ package httpadapter
 import (
 	"encoding/json"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -35,14 +36,26 @@ func (a *HTTPAdapter) checkAdminToken(next http.Handler) http.HandlerFunc {
 }
 
 func (a *HTTPAdapter) Import(w http.ResponseWriter, r *http.Request) {
-	v, ok := r.URL.Query()["dryrun"]
-	dryrun := ok && (len(v) == 0 || v[0] == "" || v[0] == "1")
+	v := r.FormValue("dryrun")
+	dryrun := v == "1"
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		errorResponse(w, StatusError{
 			Status:  http.StatusBadRequest,
 			Process: "parsing file",
 			Err:     errInvalidFile,
+		})
+		return
+	}
+	fileExt := filepath.Ext(header.Filename)
+	switch fileExt {
+	case ".zip":
+	case ".json":
+	default:
+		errorResponse(w, StatusError{
+			Status:  http.StatusBadRequest,
+			Process: "parsing file",
+			Err:     errInvalidFileFormat,
 		})
 		return
 	}
@@ -55,6 +68,7 @@ func (a *HTTPAdapter) Import(w http.ResponseWriter, r *http.Request) {
 	ctx = consul.ContextWithWriteOptions(ctx, &consul.WriteOptions{Token: utoken})
 
 	resp, err := a.a2.Import(ctx, &ImportRequest{
+		Format:      fileExt[1:],
 		Dryrun:      dryrun,
 		FileContent: b,
 	})
